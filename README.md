@@ -1,8 +1,8 @@
-# First8 Marketing - Recommendation Engine Plugin
+# First8 Marketing Recommendation Engine - AI-Powered WooCommerce Product Recommendations & WordPress Personalization Plugin
 
-> **Hyper-personalized content and product recommendations** — Connect your WordPress/WooCommerce site to the First8 Marketing Recommendation Engine for AI-powered personalization.
+> **AI-Powered Product Recommendations & Hyper-Personalization for WooCommerce** — Boost sales with intelligent, real-time product recommendations, dynamic content personalization, and machine learning-driven customer experience optimization.
 
-Transform your website into a hyper-personalized experience with **First8 Marketing Recommendation Engine Plugin** — the intelligent WordPress connector that delivers real-time, context-aware product recommendations and dynamic content personalization powered by advanced machine learning.
+**First8 Marketing Recommendation Engine** is the most advanced WordPress personalization plugin for WooCommerce stores and content websites. Increase conversions, average order value, and customer engagement with AI-powered product recommendations, personalized content, and intelligent email marketing. Perfect for online stores, membership sites, and content publishers seeking to deliver Netflix-style personalized experiences.
 
 [![WordPress](https://img.shields.io/badge/WordPress-6.0%2B-21759B?logo=wordpress&logoColor=white)](https://wordpress.org/)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-777BB4?logo=php&logoColor=white)](https://php.net/)
@@ -42,12 +42,28 @@ WordPress/WooCommerce ←→ First8 Marketing Recommendation Engine Plugin ←�
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features - WooCommerce Personalization & Product Recommendations
 
-### Personalized Recommendations
-- **Product Recommendations** - Display personalized product suggestions based on user behavior
-- **Context-Aware** - Recommendations adapt to page type, user journey, and session context
-- **Multi-Strategy** - Combines collaborative filtering, content-based, and sequential patterns
+### 🛍️ **AI-Powered Product Recommendations**
+- **Smart Product Suggestions** - Machine learning algorithms analyze customer behavior to recommend the perfect products
+- **"Customers Also Bought"** - Collaborative filtering shows what similar customers purchased
+- **"You May Also Like"** - Content-based recommendations based on product attributes and preferences
+- **"Frequently Bought Together"** - Cross-sell recommendations to increase average order value
+- **Personalized Upsells** - Dynamic upsell suggestions based on cart contents and browsing history
+
+### 🎯 **Context-Aware Personalization**
+- **Real-Time Adaptation** - Recommendations update instantly based on current session behavior
+- **Journey-Based Recommendations** - Different suggestions for first-time visitors vs. returning customers
+- **Page-Specific Personalization** - Tailored recommendations for product pages, cart, checkout, and homepage
+- **Time-Sensitive Offers** - Seasonal and time-based recommendation strategies
+- **Location-Aware** - Geo-targeted product suggestions (optional)
+
+### 📊 **Multi-Dimensional Intelligence**
+- **Behavioral Tracking** - Learn from clicks, views, add-to-cart, and purchase patterns
+- **Sequential Pattern Mining** - Understand product browsing sequences and predict next actions
+- **Collaborative Filtering** - "Customers like you also bought..." recommendations
+- **Content-Based Filtering** - Match products by attributes, categories, and tags
+- **Hybrid ML Models** - Combine multiple algorithms for superior accuracy
 - **Real-time Updates** - Recommendations update as user behavior changes
 
 ### WooCommerce Integration

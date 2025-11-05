@@ -1,0 +1,89 @@
+/**
+ * First8 Marketing Recommendation Engine - Popup Styles
+ */
+
+.recengine-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 999999;
+}
+
+.recengine-popup-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.recengine-popup-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.recengine-popup-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: transparent;
+    border: none;
+    font-size: 30px;
+    line-height: 1;
+    cursor: pointer;
+    color: #666;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+}
+
+.recengine-popup-close:hover {
+    color: #000;
+}
+
+.recengine-popup-body {
+    margin-top: 20px;
+}
+
+/* Animation */
+.recengine-popup {
+    animation: recenginePopupFadeIn 0.3s ease-in-out;
+}
+
+@keyframes recenginePopupFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.recengine-popup-content {
+    animation: recenginePopupSlideIn 0.3s ease-in-out;
+}
+
+@keyframes recenginePopupSlideIn {
+    from {
+        transform: translate(-50%, -60%);
+        opacity: 0;
+    }
+    to {
+        transform: translate(-50%, -50%);
+        opacity: 1;
+    }
+}
+
