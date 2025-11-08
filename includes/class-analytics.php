@@ -65,12 +65,13 @@ class RecEngine_Analytics {
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom analytics table.
 		$top_triggers = $wpdb->get_results(
 			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name is safe (prefixed).
 				"SELECT trigger_id, COUNT(*) as views
-				FROM $wpdb->prefix" . 'recengine_analytics
+				FROM {$table_name}
 				WHERE created_at > %s
 				GROUP BY trigger_id
 				ORDER BY views DESC
-				LIMIT %d',
+				LIMIT %d",
 				gmdate( 'Y-m-d H:i:s', strtotime( '-30 days' ) ),
 				10
 			)

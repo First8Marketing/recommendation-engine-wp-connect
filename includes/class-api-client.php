@@ -66,9 +66,18 @@ class RecEngine_API_Client {
 	private function __construct() {
 		$settings = get_option( 'recengine_wp_settings', array() );
 
-		$this->api_url   = isset( $settings['api_url'] ) ? trailingslashit( $settings['api_url'] ) : 'http://localhost:8000/';
+		// API URL is required - no default fallback for security.
+		// Administrators must configure this in plugin settings.
+		$this->api_url   = isset( $settings['api_url'] ) && ! empty( $settings['api_url'] )
+			? trailingslashit( $settings['api_url'] )
+			: '';
 		$this->api_key   = isset( $settings['api_key'] ) ? $settings['api_key'] : '';
 		$this->cache_ttl = isset( $settings['cache_ttl'] ) ? intval( $settings['cache_ttl'] ) : 300;
+
+		// Log warning if API URL is not configured.
+		if ( empty( $this->api_url ) ) {
+			error_log( 'Recommendation Engine: API URL not configured. Please configure in plugin settings.' );
+		}
 	}
 
 	/**
@@ -81,6 +90,14 @@ class RecEngine_API_Client {
 	 * @return array|WP_Error Recommendations or error
 	 */
 	public function get_recommendations( $user_id = null, $session_id = '', $context = array(), $count = 10 ) {
+		// Check if API URL is configured.
+		if ( empty( $this->api_url ) ) {
+			return new WP_Error(
+				'recengine_no_api_url',
+				__( 'Recommendation Engine API URL is not configured. Please configure in plugin settings.', 'first8marketing-recommendation-engine' )
+			);
+		}
+
 		// Generate cache key.
 		$cache_key = 'recengine_recs_' . md5( $user_id . $session_id . wp_json_encode( $context ) . $count ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Using wp_json_encode instead.
 
@@ -168,7 +185,38 @@ class RecEngine_API_Client {
 	private function get_session_id() {
 		if ( ! isset( $_COOKIE['recengine_session_id'] ) ) {
 			$session_id = wp_generate_uuid4();
-			setcookie( 'recengine_session_id', $session_id, time() + DAY_IN_SECONDS * 30, COOKIEPATH, COOKIE_DOMAIN );
+
+			// Secure cookie with HttpOnly, Secure (if HTTPS), and SameSite=Lax flags.
+			$secure   = is_ssl();
+			$httponly = true;
+			$samesite = 'Lax';
+
+			// PHP 7.3+ supports options array for setcookie.
+			if ( PHP_VERSION_ID >= 70300 ) {
+				setcookie(
+					'recengine_session_id',
+					$session_id,
+					array(
+						'expires'  => time() + DAY_IN_SECONDS * 30,
+						'path'     => COOKIEPATH,
+						'domain'   => COOKIE_DOMAIN,
+						'secure'   => $secure,
+						'httponly' => $httponly,
+						'samesite' => $samesite,
+					)
+				);
+			} else {
+				// Fallback for PHP < 7.3.
+				setcookie(
+					'recengine_session_id',
+					$session_id,
+					time() + DAY_IN_SECONDS * 30,
+					COOKIEPATH,
+					COOKIE_DOMAIN,
+					$secure,
+					$httponly
+				);
+			}
 		} else {
 			$session_id = sanitize_text_field( wp_unslash( $_COOKIE['recengine_session_id'] ) );
 		}
