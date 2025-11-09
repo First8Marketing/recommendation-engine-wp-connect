@@ -67,6 +67,7 @@ class Recommendation_Engine_WP_Connect {
 	private function load_dependencies() {
 		// Core classes.
 		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-api-client.php';
+		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-rest-api.php';
 		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-recommendations.php';
 		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-personalization.php';
 		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-admin.php';
@@ -115,6 +116,9 @@ class Recommendation_Engine_WP_Connect {
 	 * Initialize plugin components.
 	 */
 	public function init() {
+		// Initialize REST API.
+		RecEngine_REST_API::get_instance();
+
 		// Initialize API client.
 		RecEngine_API_Client::get_instance();
 
