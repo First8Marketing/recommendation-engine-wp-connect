@@ -9,7 +9,6 @@
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: first8marketing-recommendation-engine
- * Domain Path: /languages
  * Requires at least: 6.0
  * Requires PHP: 8.0
  *
@@ -104,8 +103,6 @@ class Recommendation_Engine_WP_Connect {
 		// Initialize components.
 		add_action( 'plugins_loaded', array( $this, 'init' ) );
 
-		// Load text domain.
-		add_action( 'init', array( $this, 'load_textdomain' ) );
 
 		// Enqueue scripts and styles.
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
@@ -158,16 +155,6 @@ class Recommendation_Engine_WP_Connect {
 		do_action( 'recengine_wp_init' );
 	}
 
-	/**
-	 * Load plugin text domain
-	 */
-	public function load_textdomain() {
-		load_plugin_textdomain(
-			'first8marketing-recommendation-engine',
-			false,
-			dirname( plugin_basename( RECENGINE_WP_PLUGIN_FILE ) ) . '/languages'
-		);
-	}
 
 	/**
 	 * Enqueue frontend scripts and styles

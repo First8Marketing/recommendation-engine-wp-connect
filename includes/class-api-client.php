@@ -76,7 +76,14 @@ class RecEngine_API_Client {
 
 		// Log warning if API URL is not configured.
 		if ( empty( $this->api_url ) ) {
-			error_log( 'Recommendation Engine: API URL not configured. Please configure in plugin settings.' );
+			// Use WordPress admin notice instead of error_log for production
+			if ( is_admin() && current_user_can( 'manage_options' ) ) {
+				add_action( 'admin_notices', function() {
+					echo '<div class="notice notice-warning"><p>' .
+						esc_html__( 'Recommendation Engine: API URL not configured. Please configure in plugin settings.', 'first8marketing-recommendation-engine' ) .
+						'</p></div>';
+				} );
+			}
 		}
 	}
 
@@ -89,7 +96,7 @@ class RecEngine_API_Client {
 	 * @param int    $count Number of recommendations.
 	 * @return array|WP_Error Recommendations or error
 	 */
-	public function get_recommendations( $user_id = null, $session_id = '', $context = array(), $count = 10 ) {
+	public function get_recommendations( $user_id = null, $session_id = '', $context = array(), $count = 10, $exclude = array() ) {
 		// Check if API URL is configured.
 		if ( empty( $this->api_url ) ) {
 			return new WP_Error(
@@ -99,7 +106,7 @@ class RecEngine_API_Client {
 		}
 
 		// Generate cache key.
-		$cache_key = 'recengine_recs_' . md5( $user_id . $session_id . wp_json_encode( $context ) . $count ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Using wp_json_encode instead.
+		$cache_key = 'recengine_recs_' . md5( $user_id . $session_id . wp_json_encode( $context ) . $count . wp_json_encode( $exclude ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Using wp_json_encode instead.
 
 		// Check cache.
 		$cached = get_transient( $cache_key );
@@ -113,6 +120,7 @@ class RecEngine_API_Client {
 			'session_id' => $session_id ? $session_id : $this->get_session_id(),
 			'context'    => $context,
 			'count'      => $count,
+			'exclude'    => $exclude, // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- External API parameter, not WordPress query
 		);
 
 		// Make API request.

@@ -73,7 +73,7 @@ class RecEngine_Recommendations {
 		$defaults = array(
 			'count'   => 10,
 			'context' => array(),
-			'exclude' => array(),
+			'exclude' => array(), // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_exclude -- External API parameter, not WordPress query
 		);
 
 		$args = wp_parse_args( $args, $defaults );
@@ -100,7 +100,8 @@ class RecEngine_Recommendations {
 			$user_id,
 			'',
 			$args['context'],
-			$args['count']
+			$args['count'],
+			$args['exclude']
 		);
 
 		if ( is_wp_error( $response ) ) {

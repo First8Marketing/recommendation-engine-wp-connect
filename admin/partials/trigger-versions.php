@@ -18,25 +18,25 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<div id="recengine-versions-container">
 		<?php
 		if ( ! empty( $versions ) ) {
-			foreach ( $versions as $index => $version ) {
+			foreach ( $versions as $recengine_index => $recengine_version ) {
 				?>
-				<div class="recengine-version-item" data-index="<?php echo esc_attr( $index ); ?>">
+				<div class="recengine-version-item" data-index="<?php echo esc_attr( $recengine_index ); ?>">
 					<h4>
 						<?php
 						/* translators: %d: Version number */
-						echo esc_html( sprintf( __( 'Version %d', 'first8marketing-recommendation-engine' ), $index + 1 ) );
+						echo esc_html( sprintf( __( 'Version %d', 'first8marketing-recommendation-engine' ), $recengine_index + 1 ) );
 						?>
 					</h4>
 					
 					<p>
 						<label>
 							<strong><?php esc_html_e( 'Condition:', 'first8marketing-recommendation-engine' ); ?></strong><br>
-							<select name="recengine_versions[<?php echo esc_attr( $index ); ?>][condition]" class="regular-text">
-								<option value="logged_in" <?php selected( $version['condition'], 'logged_in' ); ?>><?php esc_html_e( 'Logged In', 'first8marketing-recommendation-engine' ); ?></option>
-								<option value="logged_out" <?php selected( $version['condition'], 'logged_out' ); ?>><?php esc_html_e( 'Logged Out', 'first8marketing-recommendation-engine' ); ?></option>
-								<option value="user_role" <?php selected( $version['condition'], 'user_role' ); ?>><?php esc_html_e( 'User Role', 'first8marketing-recommendation-engine' ); ?></option>
-								<option value="device_type" <?php selected( $version['condition'], 'device_type' ); ?>><?php esc_html_e( 'Device Type', 'first8marketing-recommendation-engine' ); ?></option>
-								<option value="geolocation" <?php selected( $version['condition'], 'geolocation' ); ?>><?php esc_html_e( 'Geolocation', 'first8marketing-recommendation-engine' ); ?></option>
+							<select name="recengine_versions[<?php echo esc_attr( $recengine_index ); ?>][condition]" class="regular-text">
+								<option value="logged_in" <?php selected( $recengine_version['condition'], 'logged_in' ); ?>><?php esc_html_e( 'Logged In', 'first8marketing-recommendation-engine' ); ?></option>
+								<option value="logged_out" <?php selected( $recengine_version['condition'], 'logged_out' ); ?>><?php esc_html_e( 'Logged Out', 'first8marketing-recommendation-engine' ); ?></option>
+								<option value="user_role" <?php selected( $recengine_version['condition'], 'user_role' ); ?>><?php esc_html_e( 'User Role', 'first8marketing-recommendation-engine' ); ?></option>
+								<option value="device_type" <?php selected( $recengine_version['condition'], 'device_type' ); ?>><?php esc_html_e( 'Device Type', 'first8marketing-recommendation-engine' ); ?></option>
+								<option value="geolocation" <?php selected( $recengine_version['condition'], 'geolocation' ); ?>><?php esc_html_e( 'Geolocation', 'first8marketing-recommendation-engine' ); ?></option>
 							</select>
 						</label>
 					</p>
@@ -46,10 +46,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 							<strong><?php esc_html_e( 'Content:', 'first8marketing-recommendation-engine' ); ?></strong><br>
 							<?php
 							wp_editor(
-								$version['content'],
-								'recengine_version_content_' . $index,
+								$recengine_version['content'],
+								'recengine_version_content_' . $recengine_index,
 								array(
-									'textarea_name' => 'recengine_versions[' . $index . '][content]',
+									'textarea_name' => 'recengine_versions[' . $recengine_index . '][content]',
 									'textarea_rows' => 5,
 									'media_buttons' => true,
 									'teeny'         => false,

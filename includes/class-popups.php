@@ -114,7 +114,7 @@ class RecEngine_Popups {
 			<div class="recengine-popup-content">
 				<button class="recengine-popup-close">&times;</button>
 				<div class="recengine-popup-body">
-					<?php echo wp_kses_post( apply_filters( 'the_content', $popup->post_content ) ); ?>
+					<?php echo wp_kses_post( apply_filters( 'recengine_the_content', $popup->post_content ) ); ?>
 				</div>
 			</div>
 		</div>
