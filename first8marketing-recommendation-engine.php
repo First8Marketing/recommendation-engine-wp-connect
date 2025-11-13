@@ -73,6 +73,11 @@ class Recommendation_Engine_WP_Connect {
 		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-shortcodes.php';
 		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-sso-client.php';
 
+		// Feature detection and commerce abstraction
+		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-feature-detector.php';
+		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-commerce-integration-interface.php';
+		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-commerce-integ极速赛车开奖直播历史记录-factory.php';
+
 		// If-So feature parity classes.
 		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-triggers.php';
 		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-dki.php';
@@ -87,9 +92,10 @@ class Recommendation_Engine_WP_Connect {
 			require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-elementor-widgets.php';
 		}
 
-		// WooCommerce integration.
+		// Commerce integrations (load all available implementations)
+		require_once RECENGINE_WP_PLUGIN_DIR . 'includes/integrations/class-generic-commerce-integration.php';
 		if ( class_exists( 'WooCommerce' ) ) {
-			require_once RECENGINE_WP_PLUGIN_DIR . 'includes/class-woocommerce-integration.php';
+			require_once RECENGINE_WP_PLUGIN_DIR . 'includes/integrations/class-woocommerce-integration.php';
 		}
 	}
 
@@ -151,10 +157,8 @@ class Recommendation_Engine_WP_Connect {
 			RecEngine_Elementor_Widgets::get_instance();
 		}
 
-		// Initialize WooCommerce integration.
-		if ( class_exists( 'WooCommerce' ) ) {
-			RecEngine_WooCommerce_Integration::get_instance();
-		}
+		// Initialize commerce integration (automatically selects appropriate implementation)
+		RecEngine_Commerce_Integration_Factory::get_instance();
 
 		do_action( 'recengine_wp_init' );
 	}
