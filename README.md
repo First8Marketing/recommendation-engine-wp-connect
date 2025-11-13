@@ -87,15 +87,53 @@ The plugin connects to an external recommendation engine API that processes user
 
 3. **Configure API Connection:**
 
-   - Settings → Recommendation Engine
-   - Enter Recommendation Engine API URL (e.g., `https://api.yourdomain.com`)
-   - Enter API Key (provided by First8 Marketing)
-   - Click "Save Changes"
+   Navigate to Settings → Recommendation Engine to configure your API connection:
 
-4. **Test Connection:**
-   - Click "Test Connection" button
-   - Verify successful connection to API
-   - Check that recommendations are being returned
+   **API Configuration:**
+   - **API URL**: The URL of your Recommendation Engine API (e.g., `https://api.yourdomain.com` or `http://localhost:8000`)
+   - **API Key**: Your API key for authentication (see "Obtaining Your API Key" section below)
+
+   **Recommendation Engine Settings:**
+   - **Enable Recommendations**: Toggle to enable/disable recommendation functionality
+   - **Default Recommendation Count**: Number of recommendations to display by default
+   - **Cache Duration**: How long to cache recommendations (in seconds)
+   - **Fallback Content**: Content to display when no recommendations are available
+
+   **Advanced Settings:**
+   - **Debug Mode**: Enable debug logging for troubleshooting API requests
+   - **Request Timeout**: API request timeout in milliseconds
+   - **Retry Attempts**: Number of retry attempts for failed API calls
+
+4. **Obtaining Your API Key:**
+
+   API keys are obtained through the self-service tenant registration system:
+
+   **Web Registration Portal**
+   - Visit the tenant registration portal (typically at `https://your-frontend-domain.com/tenant-register`)
+   - Fill out the registration form with the following required information:
+
+   **Store Information:**
+   - **Store Name** * - Your e-commerce store name
+   - **Email Address** * - We'll send your credentials to this email
+
+   **WordPress / WooCommerce Configuration:**
+   - **WordPress URL** * - Your WordPress site URL (e.g., `https://mystore.com`)
+   - **WooCommerce API Key** * - Your WooCommerce REST API consumer key (starts with `ck_`)
+   - **WooCommerce API Secret** * - Your WooCommerce REST API consumer secret (starts with `cs_`)
+
+   **Umami Analytics Configuration:**
+   - **Umami URL** * - Your Umami analytics instance URL
+   - **Website ID** * - Your Umami website tracking ID (UUID format)
+   - **Username** * - Umami admin username
+   - **Password** * - Umami admin password
+
+   - Upon successful registration, you'll receive your API key immediately
+   - **Important**: Save your API key securely as it won't be shown again
+
+5. **Test Connection:**
+   - Click "Test Connection" button to verify API connectivity
+   - Check that the API returns a successful response
+   - Verify that recommendation data is being processed correctly
 
 == Frequently Asked Questions ==
 

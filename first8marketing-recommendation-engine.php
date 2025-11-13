@@ -119,6 +119,9 @@ class Recommendation_Engine_WP_Connect {
 		// Initialize API client.
 		RecEngine_API_Client::get_instance();
 
+		// Initialize SSO client.
+		RecEngine_SSO_Client::get_instance();
+
 		// Initialize recommendations.
 		RecEngine_Recommendations::get_instance();
 
@@ -227,6 +230,9 @@ class Recommendation_Engine_WP_Connect {
 			'cache_ttl'              => 300,
 			'enable_personalization' => true,
 			'enable_recommendations' => true,
+			'sso_issuer'             => 'https://sso.first8marketing.com',
+			'sso_client_id'          => 'first8marketing-wordpress',
+			'sso_redirect_uri'       => home_url( '/wp-admin/admin.php?page=recengine-sso-callback' ),
 		);
 
 		add_option( 'recengine_wp_settings', $default_options );
