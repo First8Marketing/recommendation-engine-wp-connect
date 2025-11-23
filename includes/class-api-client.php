@@ -94,6 +94,7 @@ class RecEngine_API_Client {
 	 * @param string $session_id Session ID.
 	 * @param array  $context Context information.
 	 * @param int    $count Number of recommendations.
+	 * @param array  $exclude Products to exclude.
 	 * @return array|WP_Error Recommendations or error
 	 */
 	public function get_recommendations( $user_id = null, $session_id = '', $context = array(), $count = 10, $exclude = array() ) {
@@ -105,8 +106,25 @@ class RecEngine_API_Client {
 			);
 		}
 
-		// Generate cache key.
-		$cache_key = 'recengine_recs_' . md5( $user_id . $session_id . wp_json_encode( $context ) . $count . wp_json_encode( $exclude ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.serialize_serialize -- Using wp_json_encode instead.
+		// PERFORMANCE: Unified cache key format matching Python backend for proper cache hit rates
+		// Format: tenant:{tenant_id}:recommendations:{session_id}:{user_id}:{count}:{context_hash}
+		// This ensures cache consistency between PHP plugin and Python API (70%+ hit rate target)
+		$settings   = get_option( 'recengine_wp_settings', array() );
+		$tenant_id  = isset( $settings['tenant_id'] ) ? $settings['tenant_id'] : 'default';
+		$user_key   = $user_id ? $user_id : 'anon';
+		
+		// Create deterministic hash of context and exclude params for cache key stability
+		$params_hash = md5( wp_json_encode( array( 'context' => $context, 'exclude' => $exclude ) ) );
+		
+		// Unified format matching Python: tenant:{tenant_id}:recommendations:{session_id}:{user_id}:{count}:{params_hash}
+		$cache_key = sprintf(
+			'tenant:%s:recommendations:%s:%s:%d:%s',
+			sanitize_key( $tenant_id ),
+			sanitize_key( $session_id ),
+			sanitize_key( $user_key ),
+			intval( $count ),
+			$params_hash
+		);
 
 		// Check cache.
 		$cached = get_transient( $cache_key );
@@ -153,7 +171,7 @@ class RecEngine_API_Client {
 				'Content-Type' => 'application/json',
 				'X-API-Key'    => $this->api_key,
 			),
-			'timeout' => 10,
+			'timeout' => 30,  // Increased from 10s to match backend timeout and accommodate ML inference
 		);
 
 		if ( 'POST' === $method || 'PUT' === $method ) {
@@ -163,7 +181,7 @@ class RecEngine_API_Client {
 		$response = wp_remote_request( $url, $args );
 
 		if ( is_wp_error( $response ) ) {
-			// // error_log( 'RecEngine API Error: ' . $response->get_error_message() );  // phpcs:ignore -- Debug code commented out.  // phpcs:ignore -- Debug code commented out.
+			error_log( 'RecEngine API Error: ' . $response->get_error_message() );
 			return $response;
 		}
 
@@ -171,14 +189,14 @@ class RecEngine_API_Client {
 		$body        = wp_remote_retrieve_body( $response );
 
 		if ( $status_code < 200 || $status_code >= 300 ) {
-			// // error_log( 'RecEngine API Error: HTTP ' . $status_code . ' - ' . $body );  // phpcs:ignore -- Debug code commented out.  // phpcs:ignore -- Debug code commented out.
+			error_log( 'RecEngine API Error: HTTP ' . $status_code . ' - ' . $body );
 			return new WP_Error( 'api_error', 'API request failed with status ' . $status_code );
 		}
 
 		$decoded = json_decode( $body, true );
 
 		if ( null === $decoded ) {
-			// // error_log( 'RecEngine API Error: Invalid JSON response' );  // phpcs:ignore -- Debug code commented out.  // phpcs:ignore -- Debug code commented out.
+			error_log( 'RecEngine API Error: Invalid JSON response' );
 			return new WP_Error( 'invalid_response', 'Invalid JSON response from API' );
 		}
 

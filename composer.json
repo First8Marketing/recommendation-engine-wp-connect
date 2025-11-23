@@ -1,0 +1,15 @@
+{
+    "name": "first8marketing/recommendation-engine-wp",
+    "description": "WordPress plugin for First8Marketing Recommendation Engine with secure JWT authentication",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "require": {
+        "php": ">=7.4",
+        "firebase/php-jwt": "^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "First8Marketing\\RecommendationEngine\\": "includes/"
+        }
+    }
+}

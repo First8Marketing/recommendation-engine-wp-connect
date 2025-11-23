@@ -105,7 +105,7 @@ class RecEngine_Recommendations {
 		);
 
 		if ( is_wp_error( $response ) ) {
-			// // error_log( 'RecEngine: Failed to get recommendations - ' . $response->get_error_message() );  // phpcs:ignore -- Debug code commented out.  // phpcs:ignore -- Debug code commented out.
+			error_log( 'RecEngine: Failed to get recommendations - ' . $response->get_error_message() );
 			return array();
 		}
 

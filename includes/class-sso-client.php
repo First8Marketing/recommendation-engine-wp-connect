@@ -10,6 +10,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load Composer autoloader for JWT library
+if ( file_exists( plugin_dir_path( __FILE__ ) . '../vendor/autoload.php' ) ) {
+	require_once plugin_dir_path( __FILE__ ) . '../vendor/autoload.php';
+}
+
+use Firebase\JWT\JWT;
+use Firebase\JWT\JWK;
+use Firebase\JWT\Key;
+
 /**
  * RecEngine_SSO_Client Class
  */
@@ -186,43 +195,135 @@ class RecEngine_SSO_Client {
 	}
 
 	/**
-	 * Validate ID token
+	 * Validate ID token with proper JWT signature verification
+	 *
+	 * SECURITY: Uses firebase/php-jwt to properly verify JWT signatures.
+	 * This prevents token forgery and ensures authenticity.
 	 *
 	 * @param string $id_token JWT ID token
 	 * @return array|WP_Error User information or error
 	 */
 	private function validate_id_token( $id_token ) {
-		// In a production environment, you would validate the JWT signature
-		// and verify the issuer, audience, and expiration
-		// For simplicity, we'll just decode the payload
-
-		$parts = explode( '.', $id_token );
-		if ( count( $parts ) !== 3 ) {
-			return new WP_Error( 'invalid_token', 'Invalid ID token format' );
+		// Check if JWT library is available
+		if ( ! class_exists( 'Firebase\JWT\JWT' ) ) {
+			error_log( 'RecEngine SSO: firebase/php-jwt library not found. Run: composer install' );
+			return new WP_Error(
+				'jwt_library_missing',
+				'JWT library not installed. Please run composer install in the plugin directory.'
+			);
 		}
 
-		$payload = json_decode( base64_decode( $parts[1] ), true );
+		try {
+			// Get JWKS (JSON Web Key Set) from SSO provider
+			$jwks = $this->fetch_jwks();
+			if ( is_wp_error( $jwks ) ) {
+				return $jwks;
+			}
 
-		if ( ! $payload ) {
-			return new WP_Error( 'invalid_token', 'Failed to decode ID token' );
-		}
+			// Parse JWKS and get signing keys
+			$keys = JWK::parseKeySet( $jwks );
 
-		// Validate expiration
-		if ( isset( $payload['exp'] ) && time() > $payload['exp'] ) {
+			// Decode and verify JWT signature
+			$decoded = JWT::decode( $id_token, $keys );
+
+			// Convert to array for further processing
+			$payload = (array) $decoded;
+
+			// Validate issuer
+			if ( empty( $payload['iss'] ) || $payload['iss'] !== $this->sso_config['issuer'] ) {
+				return new WP_Error( 'invalid_issuer', 'Invalid token issuer: ' . ( $payload['iss'] ?? 'none' ) );
+			}
+
+			// Validate audience
+			if ( empty( $payload['aud'] ) || $payload['aud'] !== $this->sso_config['client_id'] ) {
+				return new WP_Error( 'invalid_audience', 'Invalid token audience' );
+			}
+
+			// Validate expiration (JWT library already checks this, but double check)
+			if ( empty( $payload['exp'] ) || $payload['exp'] < time() ) {
+				return new WP_Error( 'token_expired', 'ID token has expired' );
+			}
+
+			// Validate issued at time (not in the future)
+			if ( ! empty( $payload['iat'] ) && $payload['iat'] > time() + 60 ) {
+				return new WP_Error( 'invalid_iat', 'Token issued in the future' );
+			}
+
+			// Log successful validation
+			error_log( 'RecEngine SSO: Token validated successfully for subject: ' . ( $payload['sub'] ?? 'unknown' ) );
+
+			return $payload;
+
+		} catch ( Firebase\JWT\ExpiredException $e ) {
+			error_log( 'RecEngine SSO: Token expired - ' . $e->getMessage() );
 			return new WP_Error( 'token_expired', 'ID token has expired' );
+		} catch ( Firebase\JWT\SignatureInvalidException $e ) {
+			error_log( 'RecEngine SSO: Invalid signature - ' . $e->getMessage() );
+			return new WP_Error( 'invalid_signature', 'Token signature verification failed' );
+		} catch ( Firebase\JWT\BeforeValidException $e ) {
+			error_log( 'RecEngine SSO: Token not yet valid - ' . $e->getMessage() );
+			return new WP_Error( 'token_not_yet_valid', 'Token is not yet valid' );
+		} catch ( Exception $e ) {
+			error_log( 'RecEngine SSO: JWT validation error - ' . $e->getMessage() );
+			return new WP_Error( 'jwt_validation_error', 'Failed to validate token: ' . $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Fetch JWKS (JSON Web Key Set) from SSO provider
+	 *
+	 * @return array|WP_Error JWKS data or error
+	 */
+	private function fetch_jwks() {
+		// Build JWKS URL from issuer
+		$jwks_url = trailingslashit( $this->sso_config['issuer'] ) . '.well-known/jwks.json';
+
+		// Try to get from cache first (cache for 1 hour)
+		$cache_key = 'recengine_sso_jwks_' . md5( $jwks_url );
+		$cached = get_transient( $cache_key );
+		if ( false !== $cached ) {
+			return $cached;
 		}
 
-		// Validate issuer
-		if ( isset( $payload['iss'] ) && $payload['iss'] !== $this->sso_config['issuer'] ) {
-			return new WP_Error( 'invalid_issuer', 'Invalid token issuer' );
+		// Fetch JWKS from provider
+		$response = wp_remote_get(
+			$jwks_url,
+			array(
+				'timeout' => 10,
+				'headers' => array(
+					'Accept' => 'application/json',
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			error_log( 'RecEngine SSO: Failed to fetch JWKS - ' . $response->get_error_message() );
+			return new WP_Error( 'jwks_fetch_failed', 'Failed to fetch JWKS from SSO provider' );
 		}
 
-		// Validate audience
-		if ( isset( $payload['aud'] ) && $payload['aud'] !== $this->sso_config['client_id'] ) {
-			return new WP_Error( 'invalid_audience', 'Invalid token audience' );
+		$status_code = wp_remote_retrieve_response_code( $response );
+		if ( 200 !== $status_code ) {
+			error_log( 'RecEngine SSO: JWKS endpoint returned status ' . $status_code );
+			return new WP_Error( 'jwks_bad_response', 'JWKS endpoint returned status ' . $status_code );
 		}
 
-		return $payload;
+		$body = wp_remote_retrieve_body( $response );
+		$jwks = json_decode( $body, true );
+
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			error_log( 'RecEngine SSO: Invalid JWKS JSON - ' . json_last_error_msg() );
+			return new WP_Error( 'jwks_invalid_json', 'Invalid JWKS JSON response' );
+		}
+
+		if ( empty( $jwks['keys'] ) || ! is_array( $jwks['keys'] ) ) {
+			error_log( 'RecEngine SSO: JWKS missing keys array' );
+			return new WP_Error( 'jwks_invalid_format', 'JWKS does not contain keys array' );
+		}
+
+		// Cache JWKS for 1 hour
+		set_transient( $cache_key, $jwks, HOUR_IN_SECONDS );
+
+		return $jwks;
 	}
 
 	/**

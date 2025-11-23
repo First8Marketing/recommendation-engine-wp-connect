@@ -9,6 +9,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+// Load encryption helper from first8marketing-track plugin
+if ( file_exists( WP_PLUGIN_DIR . '/first8marketing-track/includes/class-encryption-helper.php' ) ) {
+	require_once WP_PLUGIN_DIR . '/first8marketing-track/includes/class-encryption-helper.php';
+}
+
+use First8Marketing\Track\Encryption_Helper;
+
 /**
  * RecEngine_Admin Class
  */
@@ -143,9 +150,39 @@ class RecEngine_Admin {
 		}
 
 		if ( isset( $input['api_key'] ) ) {
-			$sanitized['api_key'] = sanitize_text_field( $input['api_key'] );
+			$api_key = sanitize_text_field( $input['api_key'] );
+			
+			// Only encrypt if not empty and Encryption_Helper is available
+			if ( ! empty( $api_key ) && class_exists( 'First8Marketing\Track\Encryption_Helper' ) ) {
+				$sanitized['api_key_encrypted'] = Encryption_Helper::encrypt( $api_key );
+				// Don't store plain text
+			} else {
+				// Fallback if encryption not available
+				$sanitized['api_key'] = $api_key;
+			}
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Get decrypted API key
+	 *
+	 * @return string Decrypted API key or empty string
+	 */
+	public static function get_api_key() {
+		$settings = get_option( 'recengine_wp_settings', array() );
+		
+		// Try encrypted key first
+		if ( isset( $settings['api_key_encrypted'] ) && class_exists( 'First8Marketing\Track\Encryption_Helper' ) ) {
+			return Encryption_Helper::decrypt( $settings['api_key_encrypted'] );
+		}
+		
+		// Fall back to plain text (for backward compatibility during migration)
+		if ( isset( $settings['api_key'] ) ) {
+			return $settings['api_key'];
+		}
+		
+		return '';
 	}
 }
