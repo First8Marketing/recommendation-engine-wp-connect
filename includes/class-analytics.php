@@ -66,7 +66,7 @@ class RecEngine_Analytics {
 		$top_triggers = $wpdb->get_results(
 			$wpdb->prepare(
 				"SELECT trigger_id, COUNT(*) as views
-				FROM " . $wpdb->prefix . "recengine_analytics
+				FROM " . esc_sql( $wpdb->prefix . "recengine_analytics" ) . "
 				WHERE created_at > %s
 				GROUP BY trigger_id
 				ORDER BY views DESC
@@ -143,7 +143,7 @@ class RecEngine_Analytics {
 	public static function create_analytics_table() {
 		global $wpdb;
 
-		$table_name      = $wpdb->prefix . 'recengine_analytics';
+		$table_name      = esc_sql( $wpdb->prefix . 'recengine_analytics' );
 		$charset_collate = $wpdb->get_charset_collate();
 
 		$sql = "CREATE TABLE IF NOT EXISTS $table_name (
@@ -159,6 +159,126 @@ class RecEngine_Analytics {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( $sql );
+
+		error_log( sprintf(
+			'[RecEngine] Analytics table %s created/verified',
+			$table_name
+		) );
+	}
+
+	/**
+	 * Verify database tables exist and are accessible
+	 *
+	 * @return bool|WP_Error True if tables exist, WP_Error otherwise
+	 */
+	public static function verify_database_tables() {
+		global $wpdb;
+
+		$table_name = $wpdb->prefix . 'recengine_analytics';
+
+		try {
+			// Check if table exists
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$table_exists = $wpdb->get_var(
+				$wpdb->prepare(
+					'SHOW TABLES LIKE %s',
+					$table_name
+				)
+			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+			if ( $table_exists !== $table_name ) {
+				error_log( sprintf(
+					'[RecEngine] Analytics table missing: %s. Attempting to create...',
+					$table_name
+				) );
+
+				self::create_analytics_table();
+
+				// Verify creation succeeded
+				// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				$table_exists = $wpdb->get_var(
+					$wpdb->prepare(
+						'SHOW TABLES LIKE %s',
+						$table_name
+					)
+				);
+				// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+				if ( $table_exists !== $table_name ) {
+					return new WP_Error(
+						'db_table_missing',
+						sprintf( 'Analytics table %s could not be created', $table_name )
+					);
+				}
+
+				error_log( '[RecEngine] Analytics table created successfully' );
+			}
+
+			return true;
+
+		} catch ( Exception $e ) {
+			error_log( sprintf(
+				'[RecEngine] Database verification error: %s',
+				$e->getMessage()
+			) );
+			return new WP_Error( 'db_error', $e->getMessage() );
+		}
+	}
+
+	/**
+	 * Track analytics event
+	 *
+	 * @param int    $trigger_id Trigger ID.
+	 * @param string $content_version Content version.
+	 * @param int    $user_id User ID.
+	 * @return bool|WP_Error True on success, WP_Error on failure
+	 */
+	public static function track_event( $trigger_id, $content_version = '', $user_id = 0 ) {
+		// Verify database health before writing
+		$health_check = self::verify_database_tables();
+		if ( is_wp_error( $health_check ) ) {
+			error_log( sprintf(
+				'[RecEngine] Cannot track event: %s',
+				$health_check->get_error_message()
+			) );
+			return $health_check;
+		}
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'recengine_analytics';
+
+		try {
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$result = $wpdb->insert(
+				$table_name,
+				array(
+					'trigger_id'      => $trigger_id,
+					'content_version' => $content_version,
+					'user_id'         => $user_id,
+					'created_at'      => current_time( 'mysql' ),
+				),
+				array( '%d', '%s', '%d', '%s' )
+			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+			if ( false === $result ) {
+				error_log( sprintf(
+					'[RecEngine] Failed to track event: %s',
+					$wpdb->last_error
+				) );
+				return new WP_Error( 'db_insert_failed', $wpdb->last_error );
+			}
+
+			return true;
+
+		} catch ( Exception $e ) {
+			error_log( sprintf(
+				'[RecEngine] Analytics tracking error: %s',
+				$e->getMessage()
+			) );
+			return new WP_Error( 'exception', $e->getMessage() );
+		}
 	}
 }
 

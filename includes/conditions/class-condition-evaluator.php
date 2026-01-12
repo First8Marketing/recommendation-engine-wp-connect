@@ -21,7 +21,25 @@ class RecEngine_Condition_Evaluator {
 	 * @return bool
 	 */
 	public function evaluate( $condition_type, $conditions ) {
-		$method = 'evaluate_' . $condition_type;
+		// Whitelist of allowed condition types to prevent method injection.
+		$allowed_conditions = array(
+			'logged_in',
+			'logged_out',
+			'user_role',
+			'device_type',
+			'geolocation',
+			'utm_parameter',
+			'datetime',
+			'woocommerce_cart',
+			'referrer',
+		);
+
+		// Validate condition_type is in whitelist.
+		if ( ! in_array( $condition_type, $allowed_conditions, true ) ) {
+			return false;
+		}
+
+		$method = 'evaluate_' . sanitize_key( $condition_type );
 
 		if ( method_exists( $this, $method ) ) {
 			return $this->$method( $conditions );

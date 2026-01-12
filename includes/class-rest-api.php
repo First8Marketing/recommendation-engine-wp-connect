@@ -154,43 +154,67 @@ class RecEngine_REST_API {
 		$products = array();
 
 		if ( $query->have_posts() ) {
+			// Collect product IDs first to enable batch loading
+			$product_ids = array();
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				$product_id = get_the_ID();
-				$product    = wc_get_product( $product_id );
+				$product_ids[] = get_the_ID();
+			}
+			wp_reset_postdata();
 
+			// Batch load WooCommerce products to avoid N+1 queries
+			$wc_products = wc_get_products(
+				array(
+					'include' => $product_ids,
+					'limit'   => -1,
+					'orderby' => 'include', // Maintain original order
+				)
+			);
+
+			// Build product data array
+			foreach ( $wc_products as $product ) {
 				if ( ! $product ) {
 					continue;
 				}
 
-				// Build product data array
-				$product_data = array(
-					'id'               => $product_id,
-					'name'             => $product->get_name(),
-					'slug'             => $product->get_slug(),
-					'permalink'        => get_permalink( $product_id ),
-					'type'             => $product->get_type(),
-					'status'           => $product->get_status(),
-					'description'      => $product->get_description(),
-					'short_description' => $product->get_short_description(),
-					'sku'              => $product->get_sku(),
-					'price'            => $product->get_price(),
-					'regular_price'    => $product->get_regular_price(),
-					'sale_price'       => $product->get_sale_price(),
-					'on_sale'          => $product->is_on_sale(),
-					'stock_status'     => $product->get_stock_status(),
-					'stock_quantity'   => $product->get_stock_quantity(),
-					'categories'       => $this->get_product_categories( $product_id ),
-					'tags'             => $this->get_product_tags( $product_id ),
-					'images'           => $this->get_product_images( $product ),
-					'attributes'       => $this->get_product_attributes( $product ),
-					'date_created'     => $product->get_date_created() ? $product->get_date_created()->date( 'c' ) : null,
-					'date_modified'    => $product->get_date_modified() ? $product->get_date_modified()->date( 'c' ) : null,
-				);
+				$product_id = $product->get_id();
 
-				$products[] = $product_data;
+				try {
+					$product_data = array(
+						'id'                => $product_id,
+						'name'              => $product->get_name(),
+						'slug'              => $product->get_slug(),
+						'permalink'         => get_permalink( $product_id ),
+						'type'              => $product->get_type(),
+						'status'            => $product->get_status(),
+						'description'       => $product->get_description(),
+						'short_description' => $product->get_short_description(),
+						'sku'               => $product->get_sku(),
+						'price'             => $product->get_price(),
+						'regular_price'     => $product->get_regular_price(),
+						'sale_price'        => $product->get_sale_price(),
+						'on_sale'           => $product->is_on_sale(),
+						'stock_status'      => $product->get_stock_status(),
+						'stock_quantity'    => $product->get_stock_quantity(),
+						'categories'        => $this->get_product_categories( $product_id ),
+						'tags'              => $this->get_product_tags( $product_id ),
+						'images'            => $this->get_product_images( $product ),
+						'attributes'        => $this->get_product_attributes( $product ),
+						'date_created'      => $product->get_date_created() ? $product->get_date_created()->date( 'c' ) : null,
+						'date_modified'     => $product->get_date_modified() ? $product->get_date_modified()->date( 'c' ) : null,
+					);
+
+					$products[] = $product_data;
+
+				} catch ( Exception $e ) {
+					error_log( sprintf(
+						'[RecEngine REST API] Error processing product %d: %s',
+						$product_id,
+						$e->getMessage()
+					) );
+					continue;
+				}
 			}
-			wp_reset_postdata();
 		}
 
 		// Add pagination headers
